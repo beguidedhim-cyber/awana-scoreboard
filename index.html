@@ -106,7 +106,7 @@
     .total-score .score-label { color: #2ecc71; font-weight: bold; }
     .total-score .score-value { color: #fff; font-size: 2.8rem; }
 
-    /* 게임 컨트롤 버튼 (항상 표시) */
+    /* 게임 컨트롤 버튼 */
     .admin-controls {
       display: flex;
       flex-wrap: wrap;
@@ -160,24 +160,26 @@
     const app = initializeApp(firebaseConfig);
     const db = getDatabase(app);
 
-    // URL 파라미터에서 부서(dept) 구분값 가져오기 (예: ?dept=TNT)
+    // 1. URL 파라미터에서 부서 가져오기
     const urlParams = new URLSearchParams(window.location.search);
-    const deptParam = urlParams.get('dept') || 'default';
+    const rawDept = urlParams.get('dept') || 'default';
 
-// 화면 상단에 부서명 표시
+    // 2. TNT를 T&T로 자동 변환 처리
+    let displayDept = rawDept;
+    if (rawDept.toUpperCase() === 'TNT' || rawDept.toUpperCase() === 'T&T') {
+      displayDept = 'T&T';
+    }
+
+    // 3. 화면 상단에 부서명 표시
     document.addEventListener("DOMContentLoaded", () => {
       const deptTitle = document.getElementById('dept-title');
-      if (deptParam !== 'default') {
-        // TNT일 경우 화면에는 T&T로 예쁘게 출력
-        let displayDept = deptParam;
-        if (deptParam.toUpperCase() === 'TNT') displayDept = 'T&T';
-        
+      if (deptTitle && displayDept !== 'default') {
         deptTitle.innerText = `[ ${displayDept} ] `;
       }
     });
 
-    // 부서별 Firebase 경로 (예: /departments/TNT/teams)
-    const teamsRef = ref(db, `departments/${deptParam}/teams`);
+    // 부서별 Firebase 경로
+    const teamsRef = ref(db, `departments/${rawDept}/teams`);
 
     // 초기 데이터 구조
     const initialData = {
@@ -222,7 +224,7 @@
       const currentScore = parseInt(gameEl.innerText) || 0;
       const newScore = Math.max(0, currentScore + delta);
 
-      update(ref(db, `departments/${deptParam}/teams/${teamKey}`), { game: newScore });
+      update(ref(db, `departments/${rawDept}/teams/${teamKey}`), { game: newScore });
     };
 
     // 암송 점수 수정 팝업창
@@ -232,11 +234,11 @@
       
       if (inputVal !== null && inputVal.trim() !== "") {
         const newScore = parseInt(inputVal) || 0;
-        update(ref(db, `departments/${deptParam}/teams/${teamKey}`), { recitation: newScore });
+        update(ref(db, `departments/${rawDept}/teams/${teamKey}`), { recitation: newScore });
       }
     };
 
-    // 관리자 모드 토글 (암송 점수 수정 버튼 토글)
+    // 관리자 모드 토글 (관리자 모드 전용 버튼들 감추기/보이기)
     window.toggleAdminMode = () => {
       const adminControls = document.querySelectorAll('.admin-only');
       adminControls.forEach(el => {
@@ -267,12 +269,15 @@
       <div class="score-section game-score">
         <div class="score-label">🎮 게임 점수</div>
         <div class="score-value" id="red-game">0</div>
-        <div class="admin-controls">
-          <button class="btn-minus" onclick="changeGameScore('red', -100)">-100</button>
-          <button class="btn-minus" onclick="changeGameScore('red', -50)">-50</button>
-          <button class="btn-plus" onclick="changeGameScore('red', 10)">+10</button>
-          <button class="btn-plus" onclick="changeGameScore('red', 50)">+50</button>
-          <button class="btn-plus" onclick="changeGameScore('red', 100)">+100</button>
+        <!-- 관리자 모드 켰을 때만 표시 -->
+        <div class="admin-only" style="display:none;">
+          <div class="admin-controls">
+            <button class="btn-minus" onclick="changeGameScore('red', -100)">-100</button>
+            <button class="btn-minus" onclick="changeGameScore('red', -50)">-50</button>
+            <button class="btn-plus" onclick="changeGameScore('red', 10)">+10</button>
+            <button class="btn-plus" onclick="changeGameScore('red', 50)">+50</button>
+            <button class="btn-plus" onclick="changeGameScore('red', 100)">+100</button>
+          </div>
         </div>
       </div>
       <div class="score-section total-score">
@@ -294,12 +299,15 @@
       <div class="score-section game-score">
         <div class="score-label">🎮 게임 점수</div>
         <div class="score-value" id="green-game">0</div>
-        <div class="admin-controls">
-          <button class="btn-minus" onclick="changeGameScore('green', -100)">-100</button>
-          <button class="btn-minus" onclick="changeGameScore('green', -50)">-50</button>
-          <button class="btn-plus" onclick="changeGameScore('green', 10)">+10</button>
-          <button class="btn-plus" onclick="changeGameScore('green', 50)">+50</button>
-          <button class="btn-plus" onclick="changeGameScore('green', 100)">+100</button>
+        <!-- 관리자 모드 켰을 때만 표시 -->
+        <div class="admin-only" style="display:none;">
+          <div class="admin-controls">
+            <button class="btn-minus" onclick="changeGameScore('green', -100)">-100</button>
+            <button class="btn-minus" onclick="changeGameScore('green', -50)">-50</button>
+            <button class="btn-plus" onclick="changeGameScore('green', 10)">+10</button>
+            <button class="btn-plus" onclick="changeGameScore('green', 50)">+50</button>
+            <button class="btn-plus" onclick="changeGameScore('green', 100)">+100</button>
+          </div>
         </div>
       </div>
       <div class="score-section total-score">
@@ -315,18 +323,21 @@
         <div class="score-label">📖 암송 점수</div>
         <div class="score-value" id="yellow-recitation">0</div>
         <div class="admin-only" style="display:none;">
-          <button class="btn-edit" onclick="promptRecitationScore('yellow', '노랑팀')">✏️ 암송점수 수정</button>
+          <button class="btn-edit" onclick="promptRecitationScore('yellow', '노랑팀')">✏️️ 암송점수 수정</button>
         </div>
       </div>
       <div class="score-section game-score">
         <div class="score-label">🎮 게임 점수</div>
         <div class="score-value" id="yellow-game">0</div>
-        <div class="admin-controls">
-          <button class="btn-minus" onclick="changeGameScore('yellow', -100)">-100</button>
-          <button class="btn-minus" onclick="changeGameScore('yellow', -50)">-50</button>
-          <button class="btn-plus" onclick="changeGameScore('yellow', 10)">+10</button>
-          <button class="btn-plus" onclick="changeGameScore('yellow', 50)">+50</button>
-          <button class="btn-plus" onclick="changeGameScore('yellow', 100)">+100</button>
+        <!-- 관리자 모드 켰을 때만 표시 -->
+        <div class="admin-only" style="display:none;">
+          <div class="admin-controls">
+            <button class="btn-minus" onclick="changeGameScore('yellow', -100)">-100</button>
+            <button class="btn-minus" onclick="changeGameScore('yellow', -50)">-50</button>
+            <button class="btn-plus" onclick="changeGameScore('yellow', 10)">+10</button>
+            <button class="btn-plus" onclick="changeGameScore('yellow', 50)">+50</button>
+            <button class="btn-plus" onclick="changeGameScore('yellow', 100)">+100</button>
+          </div>
         </div>
       </div>
       <div class="score-section total-score">
@@ -348,12 +359,15 @@
       <div class="score-section game-score">
         <div class="score-label">🎮 게임 점수</div>
         <div class="score-value" id="blue-game">0</div>
-        <div class="admin-controls">
-          <button class="btn-minus" onclick="changeGameScore('blue', -100)">-100</button>
-          <button class="btn-minus" onclick="changeGameScore('blue', -50)">-50</button>
-          <button class="btn-plus" onclick="changeGameScore('blue', 10)">+10</button>
-          <button class="btn-plus" onclick="changeGameScore('blue', 50)">+50</button>
-          <button class="btn-plus" onclick="changeGameScore('blue', 100)">+100</button>
+        <!-- 관리자 모드 켰을 때만 표시 -->
+        <div class="admin-only" style="display:none;">
+          <div class="admin-controls">
+            <button class="btn-minus" onclick="changeGameScore('blue', -100)">-100</button>
+            <button class="btn-minus" onclick="changeGameScore('blue', -50)">-50</button>
+            <button class="btn-plus" onclick="changeGameScore('blue', 10)">+10</button>
+            <button class="btn-plus" onclick="changeGameScore('blue', 50)">+50</button>
+            <button class="btn-plus" onclick="changeGameScore('blue', 100)">+100</button>
+          </div>
         </div>
       </div>
       <div class="score-section total-score">
