@@ -20,6 +20,7 @@
     }
 
     h1 { font-size: 2rem; color: #f1f1f1; text-align: center; }
+    .dept-badge { color: #f39c12; font-size: 1.6rem; margin-right: 8px; }
 
     /* 우측 상단 관리자 모드 버튼 */
     .toggle-admin {
@@ -86,7 +87,13 @@
       text-align: center;
     }
 
-    .score-label { font-size: 0.9rem; color: #aaa; margin-bottom: 4px; }
+    /* 점수 라벨 글씨 */
+    .score-label { 
+      font-size: 1.2rem; 
+      font-weight: 700; 
+      color: #e0e0e0; 
+      margin-bottom: 6px; 
+    }
     .score-value { font-size: 2.5rem; font-weight: 800; }
     .game-score .score-value { color: #f39c12; }
 
@@ -99,7 +106,7 @@
     .total-score .score-label { color: #2ecc71; font-weight: bold; }
     .total-score .score-value { color: #fff; font-size: 2.8rem; }
 
-    /* 게임 컨트롤 버튼 (항상 표시) */
+    /* 게임 컨트롤 버튼 */
     .admin-controls {
       display: flex;
       flex-wrap: wrap;
@@ -152,7 +159,21 @@
 
     const app = initializeApp(firebaseConfig);
     const db = getDatabase(app);
-    const teamsRef = ref(db, 'teams');
+
+    // URL 파라미터에서 부서(dept) 구분값 가져오기 (예: ?dept=junior)
+    const urlParams = new URLSearchParams(window.location.search);
+    const deptParam = urlParams.get('dept') || 'default';
+
+    // 화면에 부서명 표시
+    document.addEventListener("DOMContentLoaded", () => {
+      const deptTitle = document.getElementById('dept-title');
+      if (deptParam !== 'default') {
+        deptTitle.innerText = `[ ${deptParam} ] `;
+      }
+    });
+
+    // 부서별 Firebase 참조 경로 설정 (예: /departments/junior/teams)
+    const teamsRef = ref(db, `departments/${deptParam}/teams`);
 
     // 초기 데이터 구조
     const initialData = {
@@ -191,13 +212,13 @@
       });
     });
 
-    // 게임 점수 변경 함수 (-100, -50, +10, +50, +100 등)
+    // 게임 점수 변경 함수
     window.changeGameScore = (teamKey, delta) => {
       const gameEl = document.getElementById(`${teamKey}-game`);
       const currentScore = parseInt(gameEl.innerText) || 0;
       const newScore = Math.max(0, currentScore + delta);
 
-      update(ref(db, `teams/${teamKey}`), { game: newScore });
+      update(ref(db, `departments/${deptParam}/teams/${teamKey}`), { game: newScore });
     };
 
     // 암송 점수 수정 버튼 클릭 시 팝업창으로 입력받기
@@ -207,7 +228,7 @@
       
       if (inputVal !== null && inputVal.trim() !== "") {
         const newScore = parseInt(inputVal) || 0;
-        update(ref(db, `teams/${teamKey}`), { recitation: newScore });
+        update(ref(db, `departments/${deptParam}/teams/${teamKey}`), { recitation: newScore });
       }
     };
 
@@ -223,7 +244,7 @@
 <body>
 
   <div class="header-container">
-    <h1>Awana 실시간 스코어보드</h1>
+    <h1><span id="dept-title" class="dept-badge"></span>Awana 실시간 스코어보드</h1>
     <button class="toggle-admin" onclick="toggleAdminMode()">⚙️ 관리자 모드</button>
   </div>
 
@@ -242,7 +263,6 @@
       <div class="score-section game-score">
         <div class="score-label">🎮 게임 점수</div>
         <div class="score-value" id="red-game">0</div>
-        <!-- 게임 점수 조작 버튼 (항상 표시) -->
         <div class="admin-controls">
           <button class="btn-minus" onclick="changeGameScore('red', -100)">-100</button>
           <button class="btn-minus" onclick="changeGameScore('red', -50)">-50</button>
@@ -270,7 +290,6 @@
       <div class="score-section game-score">
         <div class="score-label">🎮 게임 점수</div>
         <div class="score-value" id="green-game">0</div>
-        <!-- 게임 점수 조작 버튼 (항상 표시) -->
         <div class="admin-controls">
           <button class="btn-minus" onclick="changeGameScore('green', -100)">-100</button>
           <button class="btn-minus" onclick="changeGameScore('green', -50)">-50</button>
@@ -298,7 +317,6 @@
       <div class="score-section game-score">
         <div class="score-label">🎮 게임 점수</div>
         <div class="score-value" id="yellow-game">0</div>
-        <!-- 게임 점수 조작 버튼 (항상 표시) -->
         <div class="admin-controls">
           <button class="btn-minus" onclick="changeGameScore('yellow', -100)">-100</button>
           <button class="btn-minus" onclick="changeGameScore('yellow', -50)">-50</button>
@@ -326,7 +344,6 @@
       <div class="score-section game-score">
         <div class="score-label">🎮 게임 점수</div>
         <div class="score-value" id="blue-game">0</div>
-        <!-- 게임 점수 조작 버튼 (항상 표시) -->
         <div class="admin-controls">
           <button class="btn-minus" onclick="changeGameScore('blue', -100)">-100</button>
           <button class="btn-minus" onclick="changeGameScore('blue', -50)">-50</button>
