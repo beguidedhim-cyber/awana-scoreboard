@@ -1,0 +1,347 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Awana 실시간 스코어보드</title>
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; font-family: 'Pretendard', sans-serif; }
+    body { background-color: #121212; color: #fff; padding: 20px; display: flex; flex-direction: column; align-items: center; min-height: 100vh; position: relative; }
+    
+    /* 상단 헤더 영역 */
+    .header-container {
+      width: 100%;
+      max-width: 1200px;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      position: relative;
+      margin-bottom: 24px;
+    }
+
+    h1 { font-size: 2rem; color: #f1f1f1; text-align: center; }
+
+    /* 우측 상단 관리자 모드 버튼 */
+    .toggle-admin {
+      position: absolute;
+      right: 0;
+      top: 0;
+      padding: 10px 18px;
+      background: #333;
+      border: 1px solid #555;
+      color: #fff;
+      border-radius: 20px;
+      font-size: 0.9rem;
+      font-weight: bold;
+      cursor: pointer;
+      transition: background 0.2s;
+    }
+    .toggle-admin:hover { background: #444; }
+
+    /* 모바일 화면 대응 */
+    @media (max-width: 600px) {
+      .header-container {
+        flex-direction: column;
+        gap: 12px;
+      }
+      .toggle-admin {
+        position: static;
+      }
+    }
+    
+    /* 스코어보드 레이아웃 */
+    .scoreboard-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+      gap: 20px;
+      width: 100%;
+      max-width: 1200px;
+    }
+
+    .team-card {
+      background: #1e1e1e;
+      border-radius: 16px;
+      padding: 24px;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      box-shadow: 0 8px 24px rgba(0,0,0,0.5);
+      border-top: 8px solid;
+    }
+
+    /* 팀별 테두리 포인트 컬러 */
+    .team-red { border-color: #ff4d4d; }
+    .team-green { border-color: #2ecc71; }
+    .team-yellow { border-color: #f1c40f; }
+    .team-blue { border-color: #3498db; }
+
+    .team-name { font-size: 1.8rem; font-weight: bold; margin-bottom: 16px; }
+    
+    .score-section {
+      width: 100%;
+      background: #2a2a2a;
+      border-radius: 12px;
+      padding: 16px;
+      margin-bottom: 12px;
+      text-align: center;
+    }
+
+    .score-label { font-size: 0.9rem; color: #aaa; margin-bottom: 4px; }
+    .score-value { font-size: 2.5rem; font-weight: 800; }
+    .game-score .score-value { color: #f39c12; }
+
+    /* 최하단 총점 섹션 */
+    .total-score {
+      background: #333;
+      border: 1px solid #444;
+      margin-bottom: 0;
+    }
+    .total-score .score-label { color: #2ecc71; font-weight: bold; }
+    .total-score .score-value { color: #fff; font-size: 2.8rem; }
+
+    /* 게임 컨트롤 버튼 (항상 표시) */
+    .admin-controls {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 6px;
+      width: 100%;
+      margin-top: 8px;
+    }
+
+    button {
+      flex: 1 1 calc(33.33% - 6px);
+      padding: 10px 0;
+      font-size: 0.95rem;
+      font-weight: bold;
+      border: none;
+      border-radius: 8px;
+      cursor: pointer;
+      background: #333;
+      color: #fff;
+      transition: background 0.2s, transform 0.1s;
+    }
+    button:active { transform: scale(0.95); }
+    
+    .btn-plus { background: #27ae60; }
+    .btn-minus { background: #c0392b; }
+    .btn-edit { 
+      background: #444; 
+      width: 100%; 
+      margin-top: 8px; 
+      padding: 8px 0; 
+      font-size: 0.9rem;
+    }
+    .btn-edit:hover { background: #555; }
+  </style>
+
+  <!-- Firebase SDK 연동 -->
+  <script type="module">
+    import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
+    import { getDatabase, ref, onValue, update, set } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-database.js";
+
+    // Awana 스코어보드 전용 Firebase 설정 정보
+    const firebaseConfig = {
+      apiKey: "AIzaSyDtC4hiSFNtQ6azGYqSi-PfwAW9woCfZS0",
+      authDomain: "awana-score-board.firebaseapp.com",
+      databaseURL: "https://awana-score-board-default-rtdb.firebaseio.com",
+      projectId: "awana-score-board",
+      storageBucket: "awana-score-board.firebasestorage.app",
+      messagingSenderId: "942363018035",
+      appId: "1:942363018035:web:0c5faf33a2386b054d7446"
+    };
+
+    const app = initializeApp(firebaseConfig);
+    const db = getDatabase(app);
+    const teamsRef = ref(db, 'teams');
+
+    // 초기 데이터 구조
+    const initialData = {
+      red: { name: '빨강팀', recitation: 0, game: 0 },
+      green: { name: '초록팀', recitation: 0, game: 0 },
+      yellow: { name: '노랑팀', recitation: 0, game: 0 },
+      blue: { name: '파랑팀', recitation: 0, game: 0 }
+    };
+
+    // 데이터 실시간 수신 및 화면 반영
+    onValue(teamsRef, (snapshot) => {
+      const data = snapshot.val();
+      if (!data) {
+        set(teamsRef, initialData);
+        return;
+      }
+
+      Object.keys(data).forEach(teamKey => {
+        const team = data[teamKey];
+        
+        const recitation = team.recitation || 0;
+        const game = team.game || 0;
+        const total = recitation + game;
+
+        // 암송 점수 표시
+        const recEl = document.getElementById(`${teamKey}-recitation`);
+        if (recEl) recEl.innerText = recitation;
+
+        // 게임 점수 표시 (실시간)
+        const gameEl = document.getElementById(`${teamKey}-game`);
+        if (gameEl) gameEl.innerText = game;
+
+        // 총 점수 계산 및 표시
+        const totalEl = document.getElementById(`${teamKey}-total`);
+        if (totalEl) totalEl.innerText = total;
+      });
+    });
+
+    // 게임 점수 변경 함수 (-100, -50, +10, +50, +100 등)
+    window.changeGameScore = (teamKey, delta) => {
+      const gameEl = document.getElementById(`${teamKey}-game`);
+      const currentScore = parseInt(gameEl.innerText) || 0;
+      const newScore = Math.max(0, currentScore + delta);
+
+      update(ref(db, `teams/${teamKey}`), { game: newScore });
+    };
+
+    // 암송 점수 수정 버튼 클릭 시 팝업창으로 입력받기
+    window.promptRecitationScore = (teamKey, teamName) => {
+      const currentVal = document.getElementById(`${teamKey}-recitation`).innerText;
+      const inputVal = prompt(`${teamName}의 새로운 암송 점수를 입력하세요:`, currentVal);
+      
+      if (inputVal !== null && inputVal.trim() !== "") {
+        const newScore = parseInt(inputVal) || 0;
+        update(ref(db, `teams/${teamKey}`), { recitation: newScore });
+      }
+    };
+
+    // 관리자 모드 토글 (암송 점수 수정 버튼 토글)
+    window.toggleAdminMode = () => {
+      const adminControls = document.querySelectorAll('.admin-only');
+      adminControls.forEach(el => {
+        el.style.display = (el.style.display === 'none' || el.style.display === '') ? 'block' : 'none';
+      });
+    };
+  </script>
+</head>
+<body>
+
+  <div class="header-container">
+    <h1>Awana 실시간 스코어보드</h1>
+    <button class="toggle-admin" onclick="toggleAdminMode()">⚙️ 관리자 모드</button>
+  </div>
+
+  <div class="scoreboard-grid">
+    
+    <!-- 빨강팀 -->
+    <div class="team-card team-red">
+      <div class="team-name" style="color: #ff4d4d;">빨강팀</div>
+      <div class="score-section">
+        <div class="score-label">📖 암송 점수</div>
+        <div class="score-value" id="red-recitation">0</div>
+        <div class="admin-only" style="display:none;">
+          <button class="btn-edit" onclick="promptRecitationScore('red', '빨강팀')">✏️ 암송점수 수정</button>
+        </div>
+      </div>
+      <div class="score-section game-score">
+        <div class="score-label">🎮 게임 점수</div>
+        <div class="score-value" id="red-game">0</div>
+        <!-- 게임 점수 조작 버튼 (항상 표시) -->
+        <div class="admin-controls">
+          <button class="btn-minus" onclick="changeGameScore('red', -100)">-100</button>
+          <button class="btn-minus" onclick="changeGameScore('red', -50)">-50</button>
+          <button class="btn-plus" onclick="changeGameScore('red', 10)">+10</button>
+          <button class="btn-plus" onclick="changeGameScore('red', 50)">+50</button>
+          <button class="btn-plus" onclick="changeGameScore('red', 100)">+100</button>
+        </div>
+      </div>
+      <div class="score-section total-score">
+        <div class="score-label">🏆 총 점수</div>
+        <div class="score-value" id="red-total">0</div>
+      </div>
+    </div>
+
+    <!-- 초록팀 -->
+    <div class="team-card team-green">
+      <div class="team-name" style="color: #2ecc71;">초록팀</div>
+      <div class="score-section">
+        <div class="score-label">📖 암송 점수</div>
+        <div class="score-value" id="green-recitation">0</div>
+        <div class="admin-only" style="display:none;">
+          <button class="btn-edit" onclick="promptRecitationScore('green', '초록팀')">✏️ 암송점수 수정</button>
+        </div>
+      </div>
+      <div class="score-section game-score">
+        <div class="score-label">🎮 게임 점수</div>
+        <div class="score-value" id="green-game">0</div>
+        <!-- 게임 점수 조작 버튼 (항상 표시) -->
+        <div class="admin-controls">
+          <button class="btn-minus" onclick="changeGameScore('green', -100)">-100</button>
+          <button class="btn-minus" onclick="changeGameScore('green', -50)">-50</button>
+          <button class="btn-plus" onclick="changeGameScore('green', 10)">+10</button>
+          <button class="btn-plus" onclick="changeGameScore('green', 50)">+50</button>
+          <button class="btn-plus" onclick="changeGameScore('green', 100)">+100</button>
+        </div>
+      </div>
+      <div class="score-section total-score">
+        <div class="score-label">🏆 총 점수</div>
+        <div class="score-value" id="green-total">0</div>
+      </div>
+    </div>
+
+    <!-- 노랑팀 -->
+    <div class="team-card team-yellow">
+      <div class="team-name" style="color: #f1c40f;">노랑팀</div>
+      <div class="score-section">
+        <div class="score-label">📖 암송 점수</div>
+        <div class="score-value" id="yellow-recitation">0</div>
+        <div class="admin-only" style="display:none;">
+          <button class="btn-edit" onclick="promptRecitationScore('yellow', '노랑팀')">✏️ 암송점수 수정</button>
+        </div>
+      </div>
+      <div class="score-section game-score">
+        <div class="score-label">🎮 게임 점수</div>
+        <div class="score-value" id="yellow-game">0</div>
+        <!-- 게임 점수 조작 버튼 (항상 표시) -->
+        <div class="admin-controls">
+          <button class="btn-minus" onclick="changeGameScore('yellow', -100)">-100</button>
+          <button class="btn-minus" onclick="changeGameScore('yellow', -50)">-50</button>
+          <button class="btn-plus" onclick="changeGameScore('yellow', 10)">+10</button>
+          <button class="btn-plus" onclick="changeGameScore('yellow', 50)">+50</button>
+          <button class="btn-plus" onclick="changeGameScore('yellow', 100)">+100</button>
+        </div>
+      </div>
+      <div class="score-section total-score">
+        <div class="score-label">🏆 총 점수</div>
+        <div class="score-value" id="yellow-total">0</div>
+      </div>
+    </div>
+
+    <!-- 파랑팀 -->
+    <div class="team-card team-blue">
+      <div class="team-name" style="color: #3498db;">파랑팀</div>
+      <div class="score-section">
+        <div class="score-label">📖 암송 점수</div>
+        <div class="score-value" id="blue-recitation">0</div>
+        <div class="admin-only" style="display:none;">
+          <button class="btn-edit" onclick="promptRecitationScore('blue', '파랑팀')">✏️ 암송점수 수정</button>
+        </div>
+      </div>
+      <div class="score-section game-score">
+        <div class="score-label">🎮 게임 점수</div>
+        <div class="score-value" id="blue-game">0</div>
+        <!-- 게임 점수 조작 버튼 (항상 표시) -->
+        <div class="admin-controls">
+          <button class="btn-minus" onclick="changeGameScore('blue', -100)">-100</button>
+          <button class="btn-minus" onclick="changeGameScore('blue', -50)">-50</button>
+          <button class="btn-plus" onclick="changeGameScore('blue', 10)">+10</button>
+          <button class="btn-plus" onclick="changeGameScore('blue', 50)">+50</button>
+          <button class="btn-plus" onclick="changeGameScore('blue', 100)">+100</button>
+        </div>
+      </div>
+      <div class="score-section total-score">
+        <div class="score-label">🏆 총 점수</div>
+        <div class="score-value" id="blue-total">0</div>
+      </div>
+    </div>
+
+  </div>
+
+</body>
+</html>
