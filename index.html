@@ -5,7 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Awana 실시간 스코어보드</title>
   
-  <!-- 404 에러 방지용 가짜 파비콘 지정 -->
+  <!-- 404 에러 방지용 가짜 파비콘 -->
   <link rel="shortcut icon" href="data:image/x-icon;," type="image/x-icon">
   
   <style>
@@ -96,7 +96,7 @@
       text-align: center;
     }
 
-    /* 점수 라벨 글씨 (크고 굵게) */
+    /* 점수 라벨 글씨 */
     .score-label { 
       font-size: 1.2rem; 
       font-weight: 700; 
@@ -115,7 +115,7 @@
     .total-score .score-label { color: #2ecc71; font-weight: bold; }
     .total-score .score-value { color: #fff; font-size: 2.8rem; }
 
-    /* 게임 컨트롤 버튼 */
+    /* 컨트롤 버튼 */
     .admin-controls {
       display: flex;
       flex-wrap: wrap;
@@ -227,7 +227,7 @@
       });
     });
 
-    // 게임 점수 변경 함수
+    // 게임 점수 증감 버튼 함수
     window.changeGameScore = (teamKey, delta) => {
       const gameEl = document.getElementById(`${teamKey}-game`);
       const currentScore = parseInt(gameEl.innerText) || 0;
@@ -236,7 +236,18 @@
       update(ref(db, `departments/${rawDept}/teams/${teamKey}`), { game: newScore });
     };
 
-    // 암송 점수 수정 팝업창
+    // 게임 점수 직접 수정 팝업창
+    window.promptGameScore = (teamKey, teamName) => {
+      const currentVal = document.getElementById(`${teamKey}-game`).innerText;
+      const inputVal = prompt(`${teamName}의 새로운 게임 점수를 입력하세요:`, currentVal);
+      
+      if (inputVal !== null && inputVal.trim() !== "") {
+        const newScore = parseInt(inputVal) || 0;
+        update(ref(db, `departments/${rawDept}/teams/${teamKey}`), { game: newScore });
+      }
+    };
+
+    // 암송 점수 직접 수정 팝업창
     window.promptRecitationScore = (teamKey, teamName) => {
       const currentVal = document.getElementById(`${teamKey}-recitation`).innerText;
       const inputVal = prompt(`${teamName}의 새로운 암송 점수를 입력하세요:`, currentVal);
@@ -283,6 +294,7 @@
         <div class="score-label">🎮 게임 점수</div>
         <div class="score-value" id="red-game">0</div>
         <div class="admin-only">
+          <button class="btn-edit" onclick="promptGameScore('red', '빨강팀')">✏️ 게임점수 수정</button>
           <div class="admin-controls">
             <button class="btn-minus" onclick="changeGameScore('red', -100)">-100</button>
             <button class="btn-minus" onclick="changeGameScore('red', -50)">-50</button>
@@ -312,6 +324,7 @@
         <div class="score-label">🎮 게임 점수</div>
         <div class="score-value" id="green-game">0</div>
         <div class="admin-only">
+          <button class="btn-edit" onclick="promptGameScore('green', '초록팀')">✏️ 게임점수 수정</button>
           <div class="admin-controls">
             <button class="btn-minus" onclick="changeGameScore('green', -100)">-100</button>
             <button class="btn-minus" onclick="changeGameScore('green', -50)">-50</button>
@@ -341,6 +354,7 @@
         <div class="score-label">🎮 게임 점수</div>
         <div class="score-value" id="yellow-game">0</div>
         <div class="admin-only">
+          <button class="btn-edit" onclick="promptGameScore('yellow', '노랑팀')">✏️ 게임점수 수정</button>
           <div class="admin-controls">
             <button class="btn-minus" onclick="changeGameScore('yellow', -100)">-100</button>
             <button class="btn-minus" onclick="changeGameScore('yellow', -50)">-50</button>
@@ -370,6 +384,7 @@
         <div class="score-label">🎮 게임 점수</div>
         <div class="score-value" id="blue-game">0</div>
         <div class="admin-only">
+          <button class="btn-edit" onclick="promptGameScore('blue', '파랑팀')">✏️ 게임점수 수정</button>
           <div class="admin-controls">
             <button class="btn-minus" onclick="changeGameScore('blue', -100)">-100</button>
             <button class="btn-minus" onclick="changeGameScore('blue', -50)">-50</button>
