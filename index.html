@@ -43,7 +43,7 @@
     }
     .toggle-admin:hover { background: #444; }
 
-    /* 기본 상태에서 관리자 전용 요소 숨기기 */
+    /* 기본 상태에서 관리자 전용 수정 버튼들만 숨기기 */
     .admin-only {
       display: none !important;
     }
@@ -115,8 +115,8 @@
     .total-score .score-label { color: #2ecc71; font-weight: bold; }
     .total-score .score-value { color: #fff; font-size: 2.8rem; }
 
-    /* 컨트롤 버튼 */
-    .admin-controls {
+    /* 점수 증감 버튼 레이아웃 */
+    .game-controls {
       display: flex;
       flex-wrap: wrap;
       gap: 6px;
@@ -293,15 +293,17 @@
       <div class="score-section game-score">
         <div class="score-label">🎮 게임 점수</div>
         <div class="score-value" id="red-game">0</div>
+        <!-- 일반 모드에서도 상시 표시되는 점수 증감 버튼 -->
+        <div class="game-controls">
+          <button class="btn-minus" onclick="changeGameScore('red', -100)">-100</button>
+          <button class="btn-minus" onclick="changeGameScore('red', -50)">-50</button>
+          <button class="btn-plus" onclick="changeGameScore('red', 10)">+10</button>
+          <button class="btn-plus" onclick="changeGameScore('red', 50)">+50</button>
+          <button class="btn-plus" onclick="changeGameScore('red', 100)">+100</button>
+        </div>
+        <!-- 관리자 모드에서만 나타나는 직접 입력 수정 버튼 -->
         <div class="admin-only">
           <button class="btn-edit" onclick="promptGameScore('red', '빨강팀')">✏️ 게임점수 수정</button>
-          <div class="admin-controls">
-            <button class="btn-minus" onclick="changeGameScore('red', -100)">-100</button>
-            <button class="btn-minus" onclick="changeGameScore('red', -50)">-50</button>
-            <button class="btn-plus" onclick="changeGameScore('red', 10)">+10</button>
-            <button class="btn-plus" onclick="changeGameScore('red', 50)">+50</button>
-            <button class="btn-plus" onclick="changeGameScore('red', 100)">+100</button>
-          </div>
         </div>
       </div>
       <div class="score-section total-score">
@@ -323,15 +325,15 @@
       <div class="score-section game-score">
         <div class="score-label">🎮 게임 점수</div>
         <div class="score-value" id="green-game">0</div>
+        <div class="game-controls">
+          <button class="btn-minus" onclick="changeGameScore('green', -100)">-100</button>
+          <button class="btn-minus" onclick="changeGameScore('green', -50)">-50</button>
+          <button class="btn-plus" onclick="changeGameScore('green', 10)">+10</button>
+          <button class="btn-plus" onclick="changeGameScore('green', 50)">+50</button>
+          <button class="btn-plus" onclick="changeGameScore('green', 100)">+100</button>
+        </div>
         <div class="admin-only">
           <button class="btn-edit" onclick="promptGameScore('green', '초록팀')">✏️ 게임점수 수정</button>
-          <div class="admin-controls">
-            <button class="btn-minus" onclick="changeGameScore('green', -100)">-100</button>
-            <button class="btn-minus" onclick="changeGameScore('green', -50)">-50</button>
-            <button class="btn-plus" onclick="changeGameScore('green', 10)">+10</button>
-            <button class="btn-plus" onclick="changeGameScore('green', 50)">+50</button>
-            <button class="btn-plus" onclick="changeGameScore('green', 100)">+100</button>
-          </div>
         </div>
       </div>
       <div class="score-section total-score">
@@ -353,15 +355,15 @@
       <div class="score-section game-score">
         <div class="score-label">🎮 게임 점수</div>
         <div class="score-value" id="yellow-game">0</div>
+        <div class="game-controls">
+          <button class="btn-minus" onclick="changeGameScore('yellow', -100)">-100</button>
+          <button class="btn-minus" onclick="changeGameScore('yellow', -50)">-50</button>
+          <button class="btn-plus" onclick="changeGameScore('yellow', 10)">+10</button>
+          <button class="btn-plus" onclick="changeGameScore('yellow', 50)">+50</button>
+          <button class="btn-plus" onclick="changeGameScore('yellow', 100)">+100</button>
+        </div>
         <div class="admin-only">
           <button class="btn-edit" onclick="promptGameScore('yellow', '노랑팀')">✏️ 게임점수 수정</button>
-          <div class="admin-controls">
-            <button class="btn-minus" onclick="changeGameScore('yellow', -100)">-100</button>
-            <button class="btn-minus" onclick="changeGameScore('yellow', -50)">-50</button>
-            <button class="btn-plus" onclick="changeGameScore('yellow', 10)">+10</button>
-            <button class="btn-plus" onclick="changeGameScore('yellow', 50)">+50</button>
-            <button class="btn-plus" onclick="changeGameScore('yellow', 100)">+100</button>
-          </div>
         </div>
       </div>
       <div class="score-section total-score">
@@ -383,15 +385,15 @@
       <div class="score-section game-score">
         <div class="score-label">🎮 게임 점수</div>
         <div class="score-value" id="blue-game">0</div>
+        <div class="game-controls">
+          <button class="btn-minus" onclick="changeGameScore('blue', -100)">-100</button>
+          <button class="btn-minus" onclick="changeGameScore('blue', -50)">-50</button>
+          <button class="btn-plus" onclick="changeGameScore('blue', 10)">+10</button>
+          <button class="btn-plus" onclick="changeGameScore('blue', 50)">+50</button>
+          <button class="btn-plus" onclick="changeGameScore('blue', 100)">+100</button>
+        </div>
         <div class="admin-only">
           <button class="btn-edit" onclick="promptGameScore('blue', '파랑팀')">✏️ 게임점수 수정</button>
-          <div class="admin-controls">
-            <button class="btn-minus" onclick="changeGameScore('blue', -100)">-100</button>
-            <button class="btn-minus" onclick="changeGameScore('blue', -50)">-50</button>
-            <button class="btn-plus" onclick="changeGameScore('blue', 10)">+10</button>
-            <button class="btn-plus" onclick="changeGameScore('blue', 50)">+50</button>
-            <button class="btn-plus" onclick="changeGameScore('blue', 100)">+100</button>
-          </div>
         </div>
       </div>
       <div class="score-section total-score">
