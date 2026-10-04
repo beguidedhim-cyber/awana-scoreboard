@@ -164,11 +164,15 @@
     const urlParams = new URLSearchParams(window.location.search);
     const deptParam = urlParams.get('dept') || 'default';
 
-    // 화면 상단에 부서명 표시
+// 화면 상단에 부서명 표시
     document.addEventListener("DOMContentLoaded", () => {
       const deptTitle = document.getElementById('dept-title');
       if (deptParam !== 'default') {
-        deptTitle.innerText = `[ ${deptParam} ] `;
+        // TNT일 경우 화면에는 T&T로 예쁘게 출력
+        let displayDept = deptParam;
+        if (deptParam.toUpperCase() === 'TNT') displayDept = 'T&T';
+        
+        deptTitle.innerText = `[ ${displayDept} ] `;
       }
     });
 
