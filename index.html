@@ -4,6 +4,10 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Awana 실시간 스코어보드</title>
+  
+  <!-- 404 에러 방지용 가짜 파비콘 지정 -->
+  <link rel="shortcut icon" href="data:image/x-icon;," type="image/x-icon">
+  
   <style>
     * { box-sizing: border-box; margin: 0; padding: 0; font-family: 'Pretendard', sans-serif; }
     body { background-color: #121212; color: #fff; padding: 20px; display: flex; flex-direction: column; align-items: center; min-height: 100vh; position: relative; }
@@ -38,6 +42,11 @@
       transition: background 0.2s;
     }
     .toggle-admin:hover { background: #444; }
+
+    /* 기본 상태에서 관리자 전용 요소 숨기기 */
+    .admin-only {
+      display: none !important;
+    }
 
     /* 모바일 화면 대응 */
     @media (max-width: 600px) {
@@ -238,11 +247,15 @@
       }
     };
 
-    // 관리자 모드 토글 (관리자 모드 전용 버튼들 감추기/보이기)
+    // 관리자 모드 토글 함수
     window.toggleAdminMode = () => {
       const adminControls = document.querySelectorAll('.admin-only');
       adminControls.forEach(el => {
-        el.style.display = (el.style.display === 'none' || el.style.display === '') ? 'block' : 'none';
+        if (window.getComputedStyle(el).display === 'none') {
+          el.style.setProperty('display', 'block', 'important');
+        } else {
+          el.style.setProperty('display', 'none', 'important');
+        }
       });
     };
   </script>
@@ -262,15 +275,14 @@
       <div class="score-section">
         <div class="score-label">📖 암송 점수</div>
         <div class="score-value" id="red-recitation">0</div>
-        <div class="admin-only" style="display:none;">
+        <div class="admin-only">
           <button class="btn-edit" onclick="promptRecitationScore('red', '빨강팀')">✏️ 암송점수 수정</button>
         </div>
       </div>
       <div class="score-section game-score">
         <div class="score-label">🎮 게임 점수</div>
         <div class="score-value" id="red-game">0</div>
-        <!-- 관리자 모드 켰을 때만 표시 -->
-        <div class="admin-only" style="display:none;">
+        <div class="admin-only">
           <div class="admin-controls">
             <button class="btn-minus" onclick="changeGameScore('red', -100)">-100</button>
             <button class="btn-minus" onclick="changeGameScore('red', -50)">-50</button>
@@ -292,15 +304,14 @@
       <div class="score-section">
         <div class="score-label">📖 암송 점수</div>
         <div class="score-value" id="green-recitation">0</div>
-        <div class="admin-only" style="display:none;">
+        <div class="admin-only">
           <button class="btn-edit" onclick="promptRecitationScore('green', '초록팀')">✏️ 암송점수 수정</button>
         </div>
       </div>
       <div class="score-section game-score">
         <div class="score-label">🎮 게임 점수</div>
         <div class="score-value" id="green-game">0</div>
-        <!-- 관리자 모드 켰을 때만 표시 -->
-        <div class="admin-only" style="display:none;">
+        <div class="admin-only">
           <div class="admin-controls">
             <button class="btn-minus" onclick="changeGameScore('green', -100)">-100</button>
             <button class="btn-minus" onclick="changeGameScore('green', -50)">-50</button>
@@ -322,15 +333,14 @@
       <div class="score-section">
         <div class="score-label">📖 암송 점수</div>
         <div class="score-value" id="yellow-recitation">0</div>
-        <div class="admin-only" style="display:none;">
-          <button class="btn-edit" onclick="promptRecitationScore('yellow', '노랑팀')">✏️️ 암송점수 수정</button>
+        <div class="admin-only">
+          <button class="btn-edit" onclick="promptRecitationScore('yellow', '노랑팀')">✏️ 암송점수 수정</button>
         </div>
       </div>
       <div class="score-section game-score">
         <div class="score-label">🎮 게임 점수</div>
         <div class="score-value" id="yellow-game">0</div>
-        <!-- 관리자 모드 켰을 때만 표시 -->
-        <div class="admin-only" style="display:none;">
+        <div class="admin-only">
           <div class="admin-controls">
             <button class="btn-minus" onclick="changeGameScore('yellow', -100)">-100</button>
             <button class="btn-minus" onclick="changeGameScore('yellow', -50)">-50</button>
@@ -352,15 +362,14 @@
       <div class="score-section">
         <div class="score-label">📖 암송 점수</div>
         <div class="score-value" id="blue-recitation">0</div>
-        <div class="admin-only" style="display:none;">
+        <div class="admin-only">
           <button class="btn-edit" onclick="promptRecitationScore('blue', '파랑팀')">✏️ 암송점수 수정</button>
         </div>
       </div>
       <div class="score-section game-score">
         <div class="score-label">🎮 게임 점수</div>
         <div class="score-value" id="blue-game">0</div>
-        <!-- 관리자 모드 켰을 때만 표시 -->
-        <div class="admin-only" style="display:none;">
+        <div class="admin-only">
           <div class="admin-controls">
             <button class="btn-minus" onclick="changeGameScore('blue', -100)">-100</button>
             <button class="btn-minus" onclick="changeGameScore('blue', -50)">-50</button>
