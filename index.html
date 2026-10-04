@@ -87,7 +87,7 @@
       text-align: center;
     }
 
-    /* 점수 라벨 글씨 */
+    /* 점수 라벨 글씨 (크고 굵게) */
     .score-label { 
       font-size: 1.2rem; 
       font-weight: 700; 
@@ -106,7 +106,7 @@
     .total-score .score-label { color: #2ecc71; font-weight: bold; }
     .total-score .score-value { color: #fff; font-size: 2.8rem; }
 
-    /* 게임 컨트롤 버튼 */
+    /* 게임 컨트롤 버튼 (항상 표시) */
     .admin-controls {
       display: flex;
       flex-wrap: wrap;
@@ -146,7 +146,7 @@
     import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
     import { getDatabase, ref, onValue, update, set } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-database.js";
 
-    // Awana 스코어보드 전용 Firebase 설정 정보
+    // Firebase 설정 정보
     const firebaseConfig = {
       apiKey: "AIzaSyDtC4hiSFNtQ6azGYqSi-PfwAW9woCfZS0",
       authDomain: "awana-score-board.firebaseapp.com",
@@ -160,11 +160,11 @@
     const app = initializeApp(firebaseConfig);
     const db = getDatabase(app);
 
-    // URL 파라미터에서 부서(dept) 구분값 가져오기 (예: ?dept=junior)
+    // URL 파라미터에서 부서(dept) 구분값 가져오기 (예: ?dept=TNT)
     const urlParams = new URLSearchParams(window.location.search);
     const deptParam = urlParams.get('dept') || 'default';
 
-    // 화면에 부서명 표시
+    // 화면 상단에 부서명 표시
     document.addEventListener("DOMContentLoaded", () => {
       const deptTitle = document.getElementById('dept-title');
       if (deptParam !== 'default') {
@@ -172,7 +172,7 @@
       }
     });
 
-    // 부서별 Firebase 참조 경로 설정 (예: /departments/junior/teams)
+    // 부서별 Firebase 경로 (예: /departments/TNT/teams)
     const teamsRef = ref(db, `departments/${deptParam}/teams`);
 
     // 초기 데이터 구조
@@ -202,7 +202,7 @@
         const recEl = document.getElementById(`${teamKey}-recitation`);
         if (recEl) recEl.innerText = recitation;
 
-        // 게임 점수 표시 (실시간)
+        // 게임 점수 표시
         const gameEl = document.getElementById(`${teamKey}-game`);
         if (gameEl) gameEl.innerText = game;
 
@@ -221,7 +221,7 @@
       update(ref(db, `departments/${deptParam}/teams/${teamKey}`), { game: newScore });
     };
 
-    // 암송 점수 수정 버튼 클릭 시 팝업창으로 입력받기
+    // 암송 점수 수정 팝업창
     window.promptRecitationScore = (teamKey, teamName) => {
       const currentVal = document.getElementById(`${teamKey}-recitation`).innerText;
       const inputVal = prompt(`${teamName}의 새로운 암송 점수를 입력하세요:`, currentVal);
