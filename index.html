@@ -26,11 +26,17 @@
     h1 { font-size: 2rem; color: #f1f1f1; text-align: center; }
     .dept-badge { color: #f39c12; font-size: 1.6rem; margin-right: 8px; }
 
-    /* 우측 상단 관리자 모드 버튼 */
-    .toggle-admin {
+    /* 상단 관리자 컨트롤 영역 (우측 상단 배치) */
+    .top-admin-group {
       position: absolute;
       right: 0;
       top: 0;
+      display: flex;
+      gap: 8px;
+    }
+
+    /* 관리자 모드 & 초기화 버튼 공통 스타일 */
+    .btn-top-action {
       padding: 10px 18px;
       background: #333;
       border: 1px solid #555;
@@ -41,20 +47,27 @@
       cursor: pointer;
       transition: background 0.2s;
     }
-    .toggle-admin:hover { background: #444; }
+    .btn-top-action:hover { background: #444; }
 
-    /* 기본 상태에서 관리자 전용 수정 버튼들만 숨기기 */
+    /* 초기화 버튼 특수 컬러 */
+    .btn-reset {
+      background: #c0392b;
+      border-color: #e74c3c;
+    }
+    .btn-reset:hover { background: #e74c3c; }
+
+    /* 기본 상태에서 관리자 전용 요소 숨기기 */
     .admin-only {
       display: none !important;
     }
 
     /* 모바일 화면 대응 */
-    @media (max-width: 600px) {
+    @media (max-width: 768px) {
       .header-container {
         flex-direction: column;
         gap: 12px;
       }
-      .toggle-admin {
+      .top-admin-group {
         position: static;
       }
     }
@@ -82,8 +95,8 @@
     /* 팀별 테두리 포인트 컬러 */
     .team-red { border-color: #ff4d4d; }
     .team-green { border-color: #2ecc71; }
-    .team-yellow { border-color: #f1c40f; }
     .team-blue { border-color: #3498db; }
+    .team-yellow { border-color: #f1c40f; }
 
     .team-name { font-size: 1.8rem; font-weight: bold; margin-bottom: 16px; }
     
@@ -190,12 +203,12 @@
     // 부서별 Firebase 경로
     const teamsRef = ref(db, `departments/${rawDept}/teams`);
 
-    // 초기 데이터 구조
+    // 초기 데이터 구조 (순서: 빨강 -> 초록 -> 파랑 -> 노랑)
     const initialData = {
       red: { name: '빨강팀', recitation: 0, game: 0 },
       green: { name: '초록팀', recitation: 0, game: 0 },
-      yellow: { name: '노랑팀', recitation: 0, game: 0 },
-      blue: { name: '파랑팀', recitation: 0, game: 0 }
+      blue: { name: '파랑팀', recitation: 0, game: 0 },
+      yellow: { name: '노랑팀', recitation: 0, game: 0 }
     };
 
     // 데이터 실시간 수신 및 화면 반영
@@ -258,7 +271,7 @@
       }
     };
 
-    // 관리자 모드 토글 함수
+    // 관리자 모드 토글 (비밀번호 없이 즉시 토글)
     window.toggleAdminMode = () => {
       const adminControls = document.querySelectorAll('.admin-only');
       adminControls.forEach(el => {
@@ -269,18 +282,31 @@
         }
       });
     };
+
+    // 점수 전체 초기화 함수
+    window.resetAllScores = () => {
+      const confirmReset = confirm(`[ ${displayDept} ]의 모든 팀 점수를 0점으로 초기화하시겠습니까?`);
+      if (confirmReset) {
+        set(teamsRef, initialData);
+        alert("모든 점수가 0점으로 초기화되었습니다.");
+      }
+    };
   </script>
 </head>
 <body>
 
   <div class="header-container">
     <h1><span id="dept-title" class="dept-badge"></span>Awana 실시간 스코어보드</h1>
-    <button class="toggle-admin" onclick="toggleAdminMode()">⚙️ 관리자 모드</button>
+    <div class="top-admin-group">
+      <!-- 관리자 모드 켜졌을 때만 좌측에 표시되는 초기화 버튼 -->
+      <button class="btn-top-action btn-reset admin-only" onclick="resetAllScores()">🔄 점수 초기화</button>
+      <button class="btn-top-action" onclick="toggleAdminMode()">⚙️ 관리자 모드</button>
+    </div>
   </div>
 
   <div class="scoreboard-grid">
     
-    <!-- 빨강팀 -->
+    <!-- 1. 빨강팀 -->
     <div class="team-card team-red">
       <div class="team-name" style="color: #ff4d4d;">빨강팀</div>
       <div class="score-section">
@@ -293,7 +319,6 @@
       <div class="score-section game-score">
         <div class="score-label">🎮 게임 점수</div>
         <div class="score-value" id="red-game">0</div>
-        <!-- 일반 모드에서도 상시 표시되는 점수 증감 버튼 -->
         <div class="game-controls">
           <button class="btn-minus" onclick="changeGameScore('red', -100)">-100</button>
           <button class="btn-minus" onclick="changeGameScore('red', -50)">-50</button>
@@ -301,7 +326,6 @@
           <button class="btn-plus" onclick="changeGameScore('red', 50)">+50</button>
           <button class="btn-plus" onclick="changeGameScore('red', 100)">+100</button>
         </div>
-        <!-- 관리자 모드에서만 나타나는 직접 입력 수정 버튼 -->
         <div class="admin-only">
           <button class="btn-edit" onclick="promptGameScore('red', '빨강팀')">✏️ 게임점수 수정</button>
         </div>
@@ -312,7 +336,7 @@
       </div>
     </div>
 
-    <!-- 초록팀 -->
+    <!-- 2. 초록팀 -->
     <div class="team-card team-green">
       <div class="team-name" style="color: #2ecc71;">초록팀</div>
       <div class="score-section">
@@ -342,7 +366,37 @@
       </div>
     </div>
 
-    <!-- 노랑팀 -->
+    <!-- 3. 파랑팀 -->
+    <div class="team-card team-blue">
+      <div class="team-name" style="color: #3498db;">파랑팀</div>
+      <div class="score-section">
+        <div class="score-label">📖 암송 점수</div>
+        <div class="score-value" id="blue-recitation">0</div>
+        <div class="admin-only">
+          <button class="btn-edit" onclick="promptRecitationScore('blue', '파랑팀')">✏️️ 암송점수 수정</button>
+        </div>
+      </div>
+      <div class="score-section game-score">
+        <div class="score-label">🎮 게임 점수</div>
+        <div class="score-value" id="blue-game">0</div>
+        <div class="game-controls">
+          <button class="btn-minus" onclick="changeGameScore('blue', -100)">-100</button>
+          <button class="btn-minus" onclick="changeGameScore('blue', -50)">-50</button>
+          <button class="btn-plus" onclick="changeGameScore('blue', 10)">+10</button>
+          <button class="btn-plus" onclick="changeGameScore('blue', 50)">+50</button>
+          <button class="btn-plus" onclick="changeGameScore('blue', 100)">+100</button>
+        </div>
+        <div class="admin-only">
+          <button class="btn-edit" onclick="promptGameScore('blue', '파랑팀')">✏️ 게임점수 수정</button>
+        </div>
+      </div>
+      <div class="score-section total-score">
+        <div class="score-label">🏆 총 점수</div>
+        <div class="score-value" id="blue-total">0</div>
+      </div>
+    </div>
+
+    <!-- 4. 노랑팀 (맨 마지막) -->
     <div class="team-card team-yellow">
       <div class="team-name" style="color: #f1c40f;">노랑팀</div>
       <div class="score-section">
@@ -369,36 +423,6 @@
       <div class="score-section total-score">
         <div class="score-label">🏆 총 점수</div>
         <div class="score-value" id="yellow-total">0</div>
-      </div>
-    </div>
-
-    <!-- 파랑팀 -->
-    <div class="team-card team-blue">
-      <div class="team-name" style="color: #3498db;">파랑팀</div>
-      <div class="score-section">
-        <div class="score-label">📖 암송 점수</div>
-        <div class="score-value" id="blue-recitation">0</div>
-        <div class="admin-only">
-          <button class="btn-edit" onclick="promptRecitationScore('blue', '파랑팀')">✏️ 암송점수 수정</button>
-        </div>
-      </div>
-      <div class="score-section game-score">
-        <div class="score-label">🎮 게임 점수</div>
-        <div class="score-value" id="blue-game">0</div>
-        <div class="game-controls">
-          <button class="btn-minus" onclick="changeGameScore('blue', -100)">-100</button>
-          <button class="btn-minus" onclick="changeGameScore('blue', -50)">-50</button>
-          <button class="btn-plus" onclick="changeGameScore('blue', 10)">+10</button>
-          <button class="btn-plus" onclick="changeGameScore('blue', 50)">+50</button>
-          <button class="btn-plus" onclick="changeGameScore('blue', 100)">+100</button>
-        </div>
-        <div class="admin-only">
-          <button class="btn-edit" onclick="promptGameScore('blue', '파랑팀')">✏️ 게임점수 수정</button>
-        </div>
-      </div>
-      <div class="score-section total-score">
-        <div class="score-label">🏆 총 점수</div>
-        <div class="score-value" id="blue-total">0</div>
       </div>
     </div>
 
