@@ -26,7 +26,7 @@
     h1 { font-size: 2rem; color: #f1f1f1; text-align: center; }
     .dept-badge { color: #f39c12; font-size: 1.6rem; margin-right: 8px; }
 
-    /* 상단 관리자 컨트롤 영역 (우측 상단 배치) */
+    /* 상단 관리자 컨트롤 영역 */
     .top-admin-group {
       position: absolute;
       right: 0;
@@ -35,7 +35,6 @@
       gap: 8px;
     }
 
-    /* 관리자 모드 & 초기화 버튼 공통 스타일 */
     .btn-top-action {
       padding: 10px 18px;
       background: #333;
@@ -49,19 +48,16 @@
     }
     .btn-top-action:hover { background: #444; }
 
-    /* 초기화 버튼 특수 컬러 */
     .btn-reset {
       background: #c0392b;
       border-color: #e74c3c;
     }
     .btn-reset:hover { background: #e74c3c; }
 
-    /* 기본 상태에서 관리자 전용 요소 숨기기 */
     .admin-only {
       display: none !important;
     }
 
-    /* 모바일 화면 대응 */
     @media (max-width: 768px) {
       .header-container {
         flex-direction: column;
@@ -92,7 +88,6 @@
       border-top: 8px solid;
     }
 
-    /* 팀별 테두리 포인트 컬러 */
     .team-red { border-color: #ff4d4d; }
     .team-green { border-color: #2ecc71; }
     .team-blue { border-color: #3498db; }
@@ -109,7 +104,6 @@
       text-align: center;
     }
 
-    /* 점수 라벨 글씨 */
     .score-label { 
       font-size: 1.2rem; 
       font-weight: 700; 
@@ -118,6 +112,14 @@
     }
     .score-value { font-size: 2.5rem; font-weight: 800; }
     .game-score .score-value { color: #f39c12; }
+
+    /* 게임 등수 점수 뱃지 표시 */
+    .game-rank-badge {
+      font-size: 0.95rem;
+      font-weight: bold;
+      color: #f39c12;
+      margin-top: 4px;
+    }
 
     /* 최하단 총점 섹션 */
     .total-score {
@@ -128,7 +130,6 @@
     .total-score .score-label { color: #2ecc71; font-weight: bold; }
     .total-score .score-value { color: #fff; font-size: 2.8rem; }
 
-    /* 점수 증감 버튼 레이아웃 */
     .game-controls {
       display: flex;
       flex-wrap: wrap;
@@ -182,17 +183,14 @@
     const app = initializeApp(firebaseConfig);
     const db = getDatabase(app);
 
-    // 1. URL 파라미터에서 부서 가져오기
     const urlParams = new URLSearchParams(window.location.search);
     const rawDept = urlParams.get('dept') || 'default';
 
-    // 2. TNT를 T&T로 자동 변환 처리
     let displayDept = rawDept;
     if (rawDept.toUpperCase() === 'TNT' || rawDept.toUpperCase() === 'T&T') {
       displayDept = 'T&T';
     }
 
-    // 3. 화면 상단에 부서명 표시
     document.addEventListener("DOMContentLoaded", () => {
       const deptTitle = document.getElementById('dept-title');
       if (deptTitle && displayDept !== 'default') {
@@ -200,10 +198,8 @@
       }
     });
 
-    // 부서별 Firebase 경로
     const teamsRef = ref(db, `departments/${rawDept}/teams`);
 
-    // 초기 데이터 구조 (순서: 빨강 -> 초록 -> 파랑 -> 노랑)
     const initialData = {
       red: { name: '빨강팀', recitation: 0, game: 0 },
       green: { name: '초록팀', recitation: 0, game: 0 },
@@ -211,7 +207,37 @@
       yellow: { name: '노랑팀', recitation: 0, game: 0 }
     };
 
-    // 데이터 실시간 수신 및 화면 반영
+    // 등수 점수 산정 함수 (1등:500, 2등:400, 3등:300, 4등:200)
+    function calculateGameRankScores(data) {
+      const rankScoreTable = [500, 400, 300, 200];
+      const teamKeys = Object.keys(data);
+      
+      // 원본 게임 점수를 기준으로 내림차순 정렬
+      const sortedTeams = teamKeys.map(key => ({
+        key: key,
+        rawGameScore: data[key].game || 0
+      })).sort((a, b) => b.rawGameScore - a.rawGameScore);
+
+      const resultScores = {};
+      let currentRank = 0;
+
+      for (let i = 0; i < sortedTeams.length; i++) {
+        // 동점인 경우 동일한 등수 점수 부여
+        if (i > 0 && sortedTeams[i].rawGameScore < sortedTeams[i - 1].rawGameScore) {
+          currentRank = i;
+        }
+        
+        const rankPoints = rankScoreTable[currentRank] !== undefined ? rankScoreTable[currentRank] : 200;
+        resultScores[sortedTeams[i].key] = {
+          rank: currentRank + 1,
+          points: rankPoints
+        };
+      }
+
+      return resultScores;
+    }
+
+    // 데이터 실시간 수신 및 계산
     onValue(teamsRef, (snapshot) => {
       const data = snapshot.val();
       if (!data) {
@@ -219,28 +245,38 @@
         return;
       }
 
+      // 게임 점수 등수별 환산 점수 계산
+      const gameRankData = calculateGameRankScores(data);
+
       Object.keys(data).forEach(teamKey => {
         const team = data[teamKey];
         
         const recitation = team.recitation || 0;
-        const game = team.game || 0;
-        const total = recitation + game;
+        const rawGame = team.game || 0;
+        const gameConvertedPoints = gameRankData[teamKey] ? gameRankData[teamKey].points : 200;
+        const gameRank = gameRankData[teamKey] ? gameRankData[teamKey].rank : 4;
+        
+        // 최종 총점 = 암송 점수 + 게임 등수 환산 점수
+        const total = recitation + gameConvertedPoints;
 
         // 암송 점수 표시
         const recEl = document.getElementById(`${teamKey}-recitation`);
         if (recEl) recEl.innerText = recitation;
 
-        // 게임 점수 표시
+        // 게임 점수 원본 표시
         const gameEl = document.getElementById(`${teamKey}-game`);
-        if (gameEl) gameEl.innerText = game;
+        if (gameEl) gameEl.innerText = rawGame;
 
-        // 총 점수 계산 및 표시
+        // 게임 등수 및 환산 점수 표시
+        const rankBadgeEl = document.getElementById(`${teamKey}-game-rank`);
+        if (rankBadgeEl) rankBadgeEl.innerText = `(${gameRank}등 ➔ +${gameConvertedPoints}점 반영)`;
+
+        // 총 점수 표시
         const totalEl = document.getElementById(`${teamKey}-total`);
         if (totalEl) totalEl.innerText = total;
       });
     });
 
-    // 게임 점수 증감 버튼 함수
     window.changeGameScore = (teamKey, delta) => {
       const gameEl = document.getElementById(`${teamKey}-game`);
       const currentScore = parseInt(gameEl.innerText) || 0;
@@ -249,7 +285,6 @@
       update(ref(db, `departments/${rawDept}/teams/${teamKey}`), { game: newScore });
     };
 
-    // 게임 점수 직접 수정 팝업창
     window.promptGameScore = (teamKey, teamName) => {
       const currentVal = document.getElementById(`${teamKey}-game`).innerText;
       const inputVal = prompt(`${teamName}의 새로운 게임 점수를 입력하세요:`, currentVal);
@@ -260,7 +295,6 @@
       }
     };
 
-    // 암송 점수 직접 수정 팝업창
     window.promptRecitationScore = (teamKey, teamName) => {
       const currentVal = document.getElementById(`${teamKey}-recitation`).innerText;
       const inputVal = prompt(`${teamName}의 새로운 암송 점수를 입력하세요:`, currentVal);
@@ -271,7 +305,6 @@
       }
     };
 
-    // 관리자 모드 토글 (비밀번호 없이 즉시 토글)
     window.toggleAdminMode = () => {
       const adminControls = document.querySelectorAll('.admin-only');
       adminControls.forEach(el => {
@@ -283,7 +316,6 @@
       });
     };
 
-    // 점수 전체 초기화 함수
     window.resetAllScores = () => {
       const confirmReset = confirm(`[ ${displayDept} ]의 모든 팀 점수를 0점으로 초기화하시겠습니까?`);
       if (confirmReset) {
@@ -298,7 +330,6 @@
   <div class="header-container">
     <h1><span id="dept-title" class="dept-badge"></span>Awana 실시간 스코어보드</h1>
     <div class="top-admin-group">
-      <!-- 관리자 모드 켜졌을 때만 좌측에 표시되는 초기화 버튼 -->
       <button class="btn-top-action btn-reset admin-only" onclick="resetAllScores()">🔄 점수 초기화</button>
       <button class="btn-top-action" onclick="toggleAdminMode()">⚙️ 관리자 모드</button>
     </div>
@@ -317,8 +348,9 @@
         </div>
       </div>
       <div class="score-section game-score">
-        <div class="score-label">🎮 게임 점수</div>
+        <div class="score-label">🎮 게임 원본 점수</div>
         <div class="score-value" id="red-game">0</div>
+        <div class="game-rank-badge" id="red-game-rank">(1등 ➔ +500점 반영)</div>
         <div class="game-controls">
           <button class="btn-minus" onclick="changeGameScore('red', -100)">-100</button>
           <button class="btn-minus" onclick="changeGameScore('red', -50)">-50</button>
@@ -347,8 +379,9 @@
         </div>
       </div>
       <div class="score-section game-score">
-        <div class="score-label">🎮 게임 점수</div>
+        <div class="score-label">🎮 게임 원본 점수</div>
         <div class="score-value" id="green-game">0</div>
+        <div class="game-rank-badge" id="green-game-rank">(1등 ➔ +500점 반영)</div>
         <div class="game-controls">
           <button class="btn-minus" onclick="changeGameScore('green', -100)">-100</button>
           <button class="btn-minus" onclick="changeGameScore('green', -50)">-50</button>
@@ -373,12 +406,13 @@
         <div class="score-label">📖 암송 점수</div>
         <div class="score-value" id="blue-recitation">0</div>
         <div class="admin-only">
-          <button class="btn-edit" onclick="promptRecitationScore('blue', '파랑팀')">✏️️ 암송점수 수정</button>
+          <button class="btn-edit" onclick="promptRecitationScore('blue', '파랑팀')">✏️ 암송점수 수정</button>
         </div>
       </div>
       <div class="score-section game-score">
-        <div class="score-label">🎮 게임 점수</div>
+        <div class="score-label">🎮 게임 원본 점수</div>
         <div class="score-value" id="blue-game">0</div>
+        <div class="game-rank-badge" id="blue-game-rank">(1등 ➔ +500점 반영)</div>
         <div class="game-controls">
           <button class="btn-minus" onclick="changeGameScore('blue', -100)">-100</button>
           <button class="btn-minus" onclick="changeGameScore('blue', -50)">-50</button>
@@ -396,7 +430,7 @@
       </div>
     </div>
 
-    <!-- 4. 노랑팀 (맨 마지막) -->
+    <!-- 4. 노랑팀 -->
     <div class="team-card team-yellow">
       <div class="team-name" style="color: #f1c40f;">노랑팀</div>
       <div class="score-section">
@@ -407,8 +441,9 @@
         </div>
       </div>
       <div class="score-section game-score">
-        <div class="score-label">🎮 게임 점수</div>
+        <div class="score-label">🎮 게임 원본 점수</div>
         <div class="score-value" id="yellow-game">0</div>
+        <div class="game-rank-badge" id="yellow-game-rank">(1등 ➔ +500점 반영)</div>
         <div class="game-controls">
           <button class="btn-minus" onclick="changeGameScore('yellow', -100)">-100</button>
           <button class="btn-minus" onclick="changeGameScore('yellow', -50)">-50</button>
