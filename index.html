@@ -113,7 +113,7 @@
     .score-value { font-size: 2.2rem; font-weight: 800; }
     .game-score .score-value { color: #f39c12; }
 
-    /* 게임 등수 점수 뱃지 */
+    /* 게임 등수 점수 뱃지 (양괄호 제거) */
     .game-rank-badge {
       font-size: 2.2rem;
       font-weight: 800;
@@ -129,19 +129,30 @@
       border: 1px solid #444;
       margin-bottom: 0;
       padding: 16px;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
     }
-    .total-score .score-label { color: #2ecc71; font-weight: bold; font-size: 1.2rem; }
-    .total-score .score-value { color: #fff; font-size: 2.8rem; }
+    .total-score .score-label { 
+      color: #2ecc71; 
+      font-weight: bold; 
+      font-size: 1.2rem; 
+      margin-bottom: 4px;
+    }
     
-    /* 메달 표시 뱃지 */
+    /* 총점수 상단에 표시되는 등수(메달) 뱃지 */
     .medal-badge {
-      font-size: 1.1rem;
-      font-weight: bold;
-      margin-left: 6px;
-      padding: 2px 8px;
-      background: rgba(255, 255, 255, 0.1);
-      border-radius: 12px;
+      font-size: 1.4rem;
+      font-weight: 800;
+      color: #f1c40f;
+      margin-bottom: 6px;
+      padding: 4px 12px;
+      background: rgba(255, 255, 255, 0.08);
+      border-radius: 16px;
+      display: inline-block;
     }
+
+    .total-score .score-value { color: #fff; font-size: 2.8rem; }
 
     /* 컨트롤 버튼 그리드 (4열 구성) */
     .game-controls {
@@ -154,7 +165,7 @@
 
     button {
       padding: 8px 0;
-      font-size: 0.85rem;
+      font-size: 0.9rem;
       font-weight: bold;
       border: none;
       border-radius: 8px;
@@ -301,7 +312,7 @@
         totals[teamKey] = attendance + uniform + recitation + gameConvertedPoints + worship;
       });
 
-      // 총점 기준 메달 계산
+      // 총점 기준 메달 및 등수 계산
       const totalRankData = calculateTotalRanks(totals);
 
       Object.keys(data).forEach(teamKey => {
@@ -330,9 +341,9 @@
         const recEl = document.getElementById(`${teamKey}-recitation`);
         if (recEl) recEl.innerText = recitation;
 
-        // 게임 점수 등수 & 환산점수
+        // 게임 점수 등수 & 환산점수 (양괄호 제거)
         const rankBadgeEl = document.getElementById(`${teamKey}-game-rank`);
-        if (rankBadgeEl) rankBadgeEl.innerText = `(${gameRank}등 +${gameConvertedPoints}점)`;
+        if (rankBadgeEl) rankBadgeEl.innerText = `${gameRank}등 +${gameConvertedPoints}점`;
 
         // 게임 원점수
         const gameEl = document.getElementById(`${teamKey}-game`);
@@ -342,14 +353,15 @@
         const worEl = document.getElementById(`${teamKey}-worship`);
         if (worEl) worEl.innerText = worship;
 
-        // 총 점수 및 메달
-        const totalEl = document.getElementById(`${teamKey}-total`);
-        if (totalEl) totalEl.innerText = total;
-
+        // 총 점수 위 메달/등수 뱃지 표시
         const totalMedalEl = document.getElementById(`${teamKey}-total-medal`);
         if (totalMedalEl && totalRankData[teamKey]) {
           totalMedalEl.innerText = totalRankData[teamKey].medal;
         }
+
+        // 총 점수 표시
+        const totalEl = document.getElementById(`${teamKey}-total`);
+        if (totalEl) totalEl.innerText = total;
       });
     });
 
@@ -433,15 +445,15 @@
       </div>
       <div class="score-section game-score">
         <div class="score-label">🎮 게임 점수</div>
-        <div class="game-rank-badge" id="red-game-rank">(1등 +1000점)</div>
+        <div class="game-rank-badge" id="red-game-rank">1등 +1000점</div>
         <div class="score-value" id="red-game">0</div>
         <div class="game-controls">
-          <!-- 상단 4개 버튼: 1, 2, 3, 4등 점수 -->
-          <button class="btn-rank" onclick="changeGameScore('red', 500)">1등 +500</button>
-          <button class="btn-rank" onclick="changeGameScore('red', 400)">2등 +400</button>
-          <button class="btn-rank" onclick="changeGameScore('red', 300)">3등 +300</button>
-          <button class="btn-rank" onclick="changeGameScore('red', 200)">4등 +200</button>
-          <!-- 하단 4개 버튼: -100, -50, +50, +100 -->
+          <!-- 상단 4개 등수 버튼 (점수 텍스트 제거) -->
+          <button class="btn-rank" onclick="changeGameScore('red', 500)">1등</button>
+          <button class="btn-rank" onclick="changeGameScore('red', 400)">2등</button>
+          <button class="btn-rank" onclick="changeGameScore('red', 300)">3등</button>
+          <button class="btn-rank" onclick="changeGameScore('red', 200)">4등</button>
+          <!-- 하단 4개 세부 점수 버튼 -->
           <button class="btn-minus" onclick="changeGameScore('red', -100)">-100</button>
           <button class="btn-minus" onclick="changeGameScore('red', -50)">-50</button>
           <button class="btn-plus" onclick="changeGameScore('red', 50)">+50</button>
@@ -459,7 +471,8 @@
         </div>
       </div>
       <div class="score-section total-score">
-        <div class="score-label">🏆 총 점수 <span class="medal-badge" id="red-total-medal">🥇 1등</span></div>
+        <div class="score-label">🏆 총 점수</div>
+        <div class="medal-badge" id="red-total-medal">🥇 1등</div>
         <div class="score-value" id="red-total">0</div>
       </div>
     </div>
@@ -490,13 +503,13 @@
       </div>
       <div class="score-section game-score">
         <div class="score-label">🎮 게임 점수</div>
-        <div class="game-rank-badge" id="green-game-rank">(1등 +1000점)</div>
+        <div class="game-rank-badge" id="green-game-rank">1등 +1000점</div>
         <div class="score-value" id="green-game">0</div>
         <div class="game-controls">
-          <button class="btn-rank" onclick="changeGameScore('green', 500)">1등 +500</button>
-          <button class="btn-rank" onclick="changeGameScore('green', 400)">2등 +400</button>
-          <button class="btn-rank" onclick="changeGameScore('green', 300)">3등 +300</button>
-          <button class="btn-rank" onclick="changeGameScore('green', 200)">4등 +200</button>
+          <button class="btn-rank" onclick="changeGameScore('green', 500)">1등</button>
+          <button class="btn-rank" onclick="changeGameScore('green', 400)">2등</button>
+          <button class="btn-rank" onclick="changeGameScore('green', 300)">3등</button>
+          <button class="btn-rank" onclick="changeGameScore('green', 200)">4등</button>
           <button class="btn-minus" onclick="changeGameScore('green', -100)">-100</button>
           <button class="btn-minus" onclick="changeGameScore('green', -50)">-50</button>
           <button class="btn-plus" onclick="changeGameScore('green', 50)">+50</button>
@@ -514,7 +527,8 @@
         </div>
       </div>
       <div class="score-section total-score">
-        <div class="score-label">🏆 총 점수 <span class="medal-badge" id="green-total-medal">🥇 1등</span></div>
+        <div class="score-label">🏆 총 점수</div>
+        <div class="medal-badge" id="green-total-medal">🥇 1등</div>
         <div class="score-value" id="green-total">0</div>
       </div>
     </div>
@@ -545,13 +559,13 @@
       </div>
       <div class="score-section game-score">
         <div class="score-label">🎮 게임 점수</div>
-        <div class="game-rank-badge" id="blue-game-rank">(1등 +1000점)</div>
+        <div class="game-rank-badge" id="blue-game-rank">1등 +1000점</div>
         <div class="score-value" id="blue-game">0</div>
         <div class="game-controls">
-          <button class="btn-rank" onclick="changeGameScore('blue', 500)">1등 +500</button>
-          <button class="btn-rank" onclick="changeGameScore('blue', 400)">2등 +400</button>
-          <button class="btn-rank" onclick="changeGameScore('blue', 300)">3등 +300</button>
-          <button class="btn-rank" onclick="changeGameScore('blue', 200)">4등 +200</button>
+          <button class="btn-rank" onclick="changeGameScore('blue', 500)">1등</button>
+          <button class="btn-rank" onclick="changeGameScore('blue', 400)">2등</button>
+          <button class="btn-rank" onclick="changeGameScore('blue', 300)">3등</button>
+          <button class="btn-rank" onclick="changeGameScore('blue', 200)">4등</button>
           <button class="btn-minus" onclick="changeGameScore('blue', -100)">-100</button>
           <button class="btn-minus" onclick="changeGameScore('blue', -50)">-50</button>
           <button class="btn-plus" onclick="changeGameScore('blue', 50)">+50</button>
@@ -569,7 +583,8 @@
         </div>
       </div>
       <div class="score-section total-score">
-        <div class="score-label">🏆 총 점수 <span class="medal-badge" id="blue-total-medal">🥇 1등</span></div>
+        <div class="score-label">🏆 총 점수</div>
+        <div class="medal-badge" id="blue-total-medal">🥇 1등</div>
         <div class="score-value" id="blue-total">0</div>
       </div>
     </div>
@@ -600,13 +615,13 @@
       </div>
       <div class="score-section game-score">
         <div class="score-label">🎮 게임 점수</div>
-        <div class="game-rank-badge" id="yellow-game-rank">(1등 +1000점)</div>
+        <div class="game-rank-badge" id="yellow-game-rank">1등 +1000점</div>
         <div class="score-value" id="yellow-game">0</div>
         <div class="game-controls">
-          <button class="btn-rank" onclick="changeGameScore('yellow', 500)">1등 +500</button>
-          <button class="btn-rank" onclick="changeGameScore('yellow', 400)">2등 +400</button>
-          <button class="btn-rank" onclick="changeGameScore('yellow', 300)">3등 +300</button>
-          <button class="btn-rank" onclick="changeGameScore('yellow', 200)">4등 +200</button>
+          <button class="btn-rank" onclick="changeGameScore('yellow', 500)">1등</button>
+          <button class="btn-rank" onclick="changeGameScore('yellow', 400)">2등</button>
+          <button class="btn-rank" onclick="changeGameScore('yellow', 300)">3등</button>
+          <button class="btn-rank" onclick="changeGameScore('yellow', 200)">4등</button>
           <button class="btn-minus" onclick="changeGameScore('yellow', -100)">-100</button>
           <button class="btn-minus" onclick="changeGameScore('yellow', -50)">-50</button>
           <button class="btn-plus" onclick="changeGameScore('yellow', 50)">+50</button>
@@ -624,7 +639,8 @@
         </div>
       </div>
       <div class="score-section total-score">
-        <div class="score-label">🏆 총 점수 <span class="medal-badge" id="yellow-total-medal">🥇 1등</span></div>
+        <div class="score-label">🏆 총 점수</div>
+        <div class="medal-badge" id="yellow-total-medal">🥇 1등</div>
         <div class="score-value" id="yellow-total">0</div>
       </div>
     </div>
