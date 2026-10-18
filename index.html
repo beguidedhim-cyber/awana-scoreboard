@@ -113,12 +113,13 @@
     .score-value { font-size: 2.2rem; font-weight: 800; }
     .game-score .score-value { color: #f39c12; }
 
-    /* 게임 등수 점수 뱃지 */
+    /* 게임 등수 점수 뱃지 - 동일한 크기(2.2rem) 및 흰색 적용 */
     .game-rank-badge {
-      font-size: 0.9rem;
-      font-weight: bold;
-      color: #f39c12;
-      margin-top: 2px;
+      font-size: 2.2rem;
+      font-weight: 800;
+      color: #ffffff;
+      margin-top: 4px;
+      margin-bottom: 8px;
     }
 
     /* 최하단 총점 섹션 */
@@ -276,7 +277,7 @@
         const gameEl = document.getElementById(`${teamKey}-game`);
         if (gameEl) gameEl.innerText = rawGame;
 
-        // 게임 등수 및 환산 점수 표시
+        // 게임 등수 및 환산 점수 표시 (큰 글씨, 흰색)
         const rankBadgeEl = document.getElementById(`${teamKey}-game-rank`);
         if (rankBadgeEl) rankBadgeEl.innerText = `(${gameRank}등 ➔ +${gameConvertedPoints}점 반영)`;
 
@@ -295,7 +296,7 @@
       update(ref(db, `departments/${rawDept}/teams/${teamKey}`), { game: newScore });
     };
 
-    // 암송/단복/출석/게임 점수 수동 입력 함수
+    // 수동 점수 입력 함수
     window.promptFieldScore = (teamKey, teamName, fieldKey, fieldLabel) => {
       const currentVal = document.getElementById(`${teamKey}-${fieldKey}`).innerText;
       const inputVal = prompt(`${teamName}의 새로운 ${fieldLabel}을 입력하세요:`, currentVal);
