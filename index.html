@@ -99,26 +99,26 @@
       width: 100%;
       background: #2a2a2a;
       border-radius: 12px;
-      padding: 16px;
-      margin-bottom: 12px;
+      padding: 14px;
+      margin-bottom: 10px;
       text-align: center;
     }
 
     .score-label { 
-      font-size: 1.2rem; 
+      font-size: 1.1rem; 
       font-weight: 700; 
       color: #e0e0e0; 
-      margin-bottom: 6px; 
+      margin-bottom: 4px; 
     }
-    .score-value { font-size: 2.5rem; font-weight: 800; }
+    .score-value { font-size: 2.2rem; font-weight: 800; }
     .game-score .score-value { color: #f39c12; }
 
-    /* 게임 등수 점수 뱃지 표시 */
+    /* 게임 등수 점수 뱃지 */
     .game-rank-badge {
-      font-size: 0.95rem;
+      font-size: 0.9rem;
       font-weight: bold;
       color: #f39c12;
-      margin-top: 4px;
+      margin-top: 2px;
     }
 
     /* 최하단 총점 섹션 */
@@ -126,8 +126,9 @@
       background: #333;
       border: 1px solid #444;
       margin-bottom: 0;
+      padding: 16px;
     }
-    .total-score .score-label { color: #2ecc71; font-weight: bold; }
+    .total-score .score-label { color: #2ecc71; font-weight: bold; font-size: 1.2rem; }
     .total-score .score-value { color: #fff; font-size: 2.8rem; }
 
     .game-controls {
@@ -157,9 +158,9 @@
     .btn-edit { 
       background: #444; 
       width: 100%; 
-      margin-top: 8px; 
-      padding: 8px 0; 
-      font-size: 0.9rem;
+      margin-top: 6px; 
+      padding: 6px 0; 
+      font-size: 0.85rem;
     }
     .btn-edit:hover { background: #555; }
   </style>
@@ -201,10 +202,10 @@
     const teamsRef = ref(db, `departments/${rawDept}/teams`);
 
     const initialData = {
-      red: { name: '빨강팀', recitation: 0, game: 0 },
-      green: { name: '초록팀', recitation: 0, game: 0 },
-      blue: { name: '파랑팀', recitation: 0, game: 0 },
-      yellow: { name: '노랑팀', recitation: 0, game: 0 }
+      red: { name: '빨강팀', recitation: 0, uniform: 0, attendance: 0, game: 0 },
+      green: { name: '초록팀', recitation: 0, uniform: 0, attendance: 0, game: 0 },
+      blue: { name: '파랑팀', recitation: 0, uniform: 0, attendance: 0, game: 0 },
+      yellow: { name: '노랑팀', recitation: 0, uniform: 0, attendance: 0, game: 0 }
     };
 
     // 등수 점수 산정 함수 (1등:500, 2등:400, 3등:300, 4등:200)
@@ -212,7 +213,6 @@
       const rankScoreTable = [500, 400, 300, 200];
       const teamKeys = Object.keys(data);
       
-      // 원본 게임 점수를 기준으로 내림차순 정렬
       const sortedTeams = teamKeys.map(key => ({
         key: key,
         rawGameScore: data[key].game || 0
@@ -222,7 +222,6 @@
       let currentRank = 0;
 
       for (let i = 0; i < sortedTeams.length; i++) {
-        // 동점인 경우 동일한 등수 점수 부여
         if (i > 0 && sortedTeams[i].rawGameScore < sortedTeams[i - 1].rawGameScore) {
           currentRank = i;
         }
@@ -245,23 +244,33 @@
         return;
       }
 
-      // 게임 점수 등수별 환산 점수 계산
       const gameRankData = calculateGameRankScores(data);
 
       Object.keys(data).forEach(teamKey => {
         const team = data[teamKey];
         
         const recitation = team.recitation || 0;
+        const uniform = team.uniform || 0;
+        const attendance = team.attendance || 0;
         const rawGame = team.game || 0;
+
         const gameConvertedPoints = gameRankData[teamKey] ? gameRankData[teamKey].points : 200;
         const gameRank = gameRankData[teamKey] ? gameRankData[teamKey].rank : 4;
         
-        // 최종 총점 = 암송 점수 + 게임 등수 환산 점수
-        const total = recitation + gameConvertedPoints;
+        // 최종 총점 = 암송 + 단복 + 출석 + 게임등수점수
+        const total = recitation + uniform + attendance + gameConvertedPoints;
 
         // 암송 점수 표시
         const recEl = document.getElementById(`${teamKey}-recitation`);
         if (recEl) recEl.innerText = recitation;
+
+        // 단복 점수 표시
+        const uniEl = document.getElementById(`${teamKey}-uniform`);
+        if (uniEl) uniEl.innerText = uniform;
+
+        // 출석 점수 표시
+        const attEl = document.getElementById(`${teamKey}-attendance`);
+        if (attEl) attEl.innerText = attendance;
 
         // 게임 점수 원본 표시
         const gameEl = document.getElementById(`${teamKey}-game`);
@@ -277,6 +286,7 @@
       });
     });
 
+    // 게임 점수 변경
     window.changeGameScore = (teamKey, delta) => {
       const gameEl = document.getElementById(`${teamKey}-game`);
       const currentScore = parseInt(gameEl.innerText) || 0;
@@ -285,23 +295,16 @@
       update(ref(db, `departments/${rawDept}/teams/${teamKey}`), { game: newScore });
     };
 
-    window.promptGameScore = (teamKey, teamName) => {
-      const currentVal = document.getElementById(`${teamKey}-game`).innerText;
-      const inputVal = prompt(`${teamName}의 새로운 게임 점수를 입력하세요:`, currentVal);
+    // 암송/단복/출석/게임 점수 수동 입력 함수
+    window.promptFieldScore = (teamKey, teamName, fieldKey, fieldLabel) => {
+      const currentVal = document.getElementById(`${teamKey}-${fieldKey}`).innerText;
+      const inputVal = prompt(`${teamName}의 새로운 ${fieldLabel}을 입력하세요:`, currentVal);
       
       if (inputVal !== null && inputVal.trim() !== "") {
         const newScore = parseInt(inputVal) || 0;
-        update(ref(db, `departments/${rawDept}/teams/${teamKey}`), { game: newScore });
-      }
-    };
-
-    window.promptRecitationScore = (teamKey, teamName) => {
-      const currentVal = document.getElementById(`${teamKey}-recitation`).innerText;
-      const inputVal = prompt(`${teamName}의 새로운 암송 점수를 입력하세요:`, currentVal);
-      
-      if (inputVal !== null && inputVal.trim() !== "") {
-        const newScore = parseInt(inputVal) || 0;
-        update(ref(db, `departments/${rawDept}/teams/${teamKey}`), { recitation: newScore });
+        const updateData = {};
+        updateData[fieldKey] = newScore;
+        update(ref(db, `departments/${rawDept}/teams/${teamKey}`), updateData);
       }
     };
 
@@ -344,11 +347,25 @@
         <div class="score-label">📖 암송 점수</div>
         <div class="score-value" id="red-recitation">0</div>
         <div class="admin-only">
-          <button class="btn-edit" onclick="promptRecitationScore('red', '빨강팀')">✏️ 암송점수 수정</button>
+          <button class="btn-edit" onclick="promptFieldScore('red', '빨강팀', 'recitation', '암송 점수')">✏️ 암송점수 수정</button>
+        </div>
+      </div>
+      <div class="score-section">
+        <div class="score-label">👔 단복 점수</div>
+        <div class="score-value" id="red-uniform">0</div>
+        <div class="admin-only">
+          <button class="btn-edit" onclick="promptFieldScore('red', '빨강팀', 'uniform', '단복 점수')">✏️ 단복점수 수정</button>
+        </div>
+      </div>
+      <div class="score-section">
+        <div class="score-label">🙋‍♂️ 출석 점수</div>
+        <div class="score-value" id="red-attendance">0</div>
+        <div class="admin-only">
+          <button class="btn-edit" onclick="promptFieldScore('red', '빨강팀', 'attendance', '출석 점수')">✏️ 출석점수 수정</button>
         </div>
       </div>
       <div class="score-section game-score">
-        <div class="score-label">🎮 게임 점수</div>
+        <div class="score-label">🎮 게임 원본 점수</div>
         <div class="score-value" id="red-game">0</div>
         <div class="game-rank-badge" id="red-game-rank">(1등 ➔ +500점 반영)</div>
         <div class="game-controls">
@@ -359,7 +376,7 @@
           <button class="btn-plus" onclick="changeGameScore('red', 100)">+100</button>
         </div>
         <div class="admin-only">
-          <button class="btn-edit" onclick="promptGameScore('red', '빨강팀')">✏️ 게임점수 수정</button>
+          <button class="btn-edit" onclick="promptFieldScore('red', '빨강팀', 'game', '게임 점수')">✏️ 게임점수 수정</button>
         </div>
       </div>
       <div class="score-section total-score">
@@ -375,11 +392,25 @@
         <div class="score-label">📖 암송 점수</div>
         <div class="score-value" id="green-recitation">0</div>
         <div class="admin-only">
-          <button class="btn-edit" onclick="promptRecitationScore('green', '초록팀')">✏️ 암송점수 수정</button>
+          <button class="btn-edit" onclick="promptFieldScore('green', '초록팀', 'recitation', '암송 점수')">✏️ 암송점수 수정</button>
+        </div>
+      </div>
+      <div class="score-section">
+        <div class="score-label">👔 단복 점수</div>
+        <div class="score-value" id="green-uniform">0</div>
+        <div class="admin-only">
+          <button class="btn-edit" onclick="promptFieldScore('green', '초록팀', 'uniform', '단복 점수')">✏️ 단복점수 수정</button>
+        </div>
+      </div>
+      <div class="score-section">
+        <div class="score-label">🙋‍♂️ 출석 점수</div>
+        <div class="score-value" id="green-attendance">0</div>
+        <div class="admin-only">
+          <button class="btn-edit" onclick="promptFieldScore('green', '초록팀', 'attendance', '출석 점수')">✏️ 출석점수 수정</button>
         </div>
       </div>
       <div class="score-section game-score">
-        <div class="score-label">🎮 게임 점수</div>
+        <div class="score-label">🎮 게임 원본 점수</div>
         <div class="score-value" id="green-game">0</div>
         <div class="game-rank-badge" id="green-game-rank">(1등 ➔ +500점 반영)</div>
         <div class="game-controls">
@@ -390,7 +421,7 @@
           <button class="btn-plus" onclick="changeGameScore('green', 100)">+100</button>
         </div>
         <div class="admin-only">
-          <button class="btn-edit" onclick="promptGameScore('green', '초록팀')">✏️ 게임점수 수정</button>
+          <button class="btn-edit" onclick="promptFieldScore('green', '초록팀', 'game', '게임 점수')">✏️ 게임점수 수정</button>
         </div>
       </div>
       <div class="score-section total-score">
@@ -406,11 +437,25 @@
         <div class="score-label">📖 암송 점수</div>
         <div class="score-value" id="blue-recitation">0</div>
         <div class="admin-only">
-          <button class="btn-edit" onclick="promptRecitationScore('blue', '파랑팀')">✏️ 암송점수 수정</button>
+          <button class="btn-edit" onclick="promptFieldScore('blue', '파랑팀', 'recitation', '암송 점수')">✏️ 암송점수 수정</button>
+        </div>
+      </div>
+      <div class="score-section">
+        <div class="score-label">👔 단복 점수</div>
+        <div class="score-value" id="blue-uniform">0</div>
+        <div class="admin-only">
+          <button class="btn-edit" onclick="promptFieldScore('blue', '파랑팀', 'uniform', '단복 점수')">✏️ 단복점수 수정</button>
+        </div>
+      </div>
+      <div class="score-section">
+        <div class="score-label">🙋‍♂️ 출석 점수</div>
+        <div class="score-value" id="blue-attendance">0</div>
+        <div class="admin-only">
+          <button class="btn-edit" onclick="promptFieldScore('blue', '파랑팀', 'attendance', '출석 점수')">✏️ 출석점수 수정</button>
         </div>
       </div>
       <div class="score-section game-score">
-        <div class="score-label">🎮 게임 점수</div>
+        <div class="score-label">🎮 게임 원본 점수</div>
         <div class="score-value" id="blue-game">0</div>
         <div class="game-rank-badge" id="blue-game-rank">(1등 ➔ +500점 반영)</div>
         <div class="game-controls">
@@ -421,7 +466,7 @@
           <button class="btn-plus" onclick="changeGameScore('blue', 100)">+100</button>
         </div>
         <div class="admin-only">
-          <button class="btn-edit" onclick="promptGameScore('blue', '파랑팀')">✏️ 게임점수 수정</button>
+          <button class="btn-edit" onclick="promptFieldScore('blue', '파랑팀', 'game', '게임 점수')">✏️ 게임점수 수정</button>
         </div>
       </div>
       <div class="score-section total-score">
@@ -437,11 +482,25 @@
         <div class="score-label">📖 암송 점수</div>
         <div class="score-value" id="yellow-recitation">0</div>
         <div class="admin-only">
-          <button class="btn-edit" onclick="promptRecitationScore('yellow', '노랑팀')">✏️ 암송점수 수정</button>
+          <button class="btn-edit" onclick="promptFieldScore('yellow', '노랑팀', 'recitation', '암송 점수')">✏️ 암송점수 수정</button>
+        </div>
+      </div>
+      <div class="score-section">
+        <div class="score-label">👔 단복 점수</div>
+        <div class="score-value" id="yellow-uniform">0</div>
+        <div class="admin-only">
+          <button class="btn-edit" onclick="promptFieldScore('yellow', '노랑팀', 'uniform', '단복 점수')">✏️ 단복점수 수정</button>
+        </div>
+      </div>
+      <div class="score-section">
+        <div class="score-label">🙋‍♂️ 출석 점수</div>
+        <div class="score-value" id="yellow-attendance">0</div>
+        <div class="admin-only">
+          <button class="btn-edit" onclick="promptFieldScore('yellow', '노랑팀', 'attendance', '출석 점수')">✏️ 출석점수 수정</button>
         </div>
       </div>
       <div class="score-section game-score">
-        <div class="score-label">🎮 게임 점수</div>
+        <div class="score-label">🎮 게임 원본 점수</div>
         <div class="score-value" id="yellow-game">0</div>
         <div class="game-rank-badge" id="yellow-game-rank">(1등 ➔ +500점 반영)</div>
         <div class="game-controls">
@@ -452,7 +511,7 @@
           <button class="btn-plus" onclick="changeGameScore('yellow', 100)">+100</button>
         </div>
         <div class="admin-only">
-          <button class="btn-edit" onclick="promptGameScore('yellow', '노랑팀')">✏️ 게임점수 수정</button>
+          <button class="btn-edit" onclick="promptFieldScore('yellow', '노랑팀', 'game', '게임 점수')">✏️ 게임점수 수정</button>
         </div>
       </div>
       <div class="score-section total-score">
