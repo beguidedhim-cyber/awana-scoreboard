@@ -137,16 +137,16 @@
       color: #2ecc71; 
       font-weight: bold; 
       font-size: 1.2rem; 
+      margin-top: 2px;
       margin-bottom: 4px;
     }
     
-    /* 총점수 상단에 표시되는 등수(메달) 뱃지 */
+    /* 가장 상단에 표시되는 등수(메달) 뱃지 */
     .medal-badge {
       font-size: 1.4rem;
       font-weight: 800;
       color: #f1c40f;
-      margin-top: 4px;
-      margin-bottom: 6px;
+      margin-bottom: 4px;
       padding: 4px 12px;
       background: rgba(255, 255, 255, 0.08);
       border-radius: 16px;
@@ -282,7 +282,7 @@
         let medal = '';
         if (rankNum === 1) medal = '🥇 1등';
         else if (rankNum === 2) medal = '🥈 2등';
-        else medal = '🥉 3등'; // 3등, 4등 모두 🥉 3등으로 표시
+        else medal = '🥉 3등';
 
         ranks[sorted[i].key] = { rank: rankNum, medal: medal };
       }
@@ -353,7 +353,7 @@
         const worEl = document.getElementById(`${teamKey}-worship`);
         if (worEl) worEl.innerText = worship;
 
-        // 총 점수 상단 메달/등수 뱃지 표시
+        // 총 점수 맨 상단 메달/등수 뱃지 표시
         const totalMedalEl = document.getElementById(`${teamKey}-total-medal`);
         if (totalMedalEl && totalRankData[teamKey]) {
           totalMedalEl.innerText = totalRankData[teamKey].medal;
@@ -468,9 +468,10 @@
           <button class="btn-edit" onclick="promptFieldScore('red', '빨강팀', 'worship', '예배 점수')">✏️ 수정</button>
         </div>
       </div>
+      <!-- 순서 변경: 1등 뱃지 -> 🏆 총 점수 -> 1000 -->
       <div class="score-section total-score">
-        <div class="score-label">🏆 총 점수</div>
         <div class="medal-badge" id="red-total-medal">🥇 1등</div>
+        <div class="score-label">🏆 총 점수</div>
         <div class="score-value" id="red-total">0</div>
       </div>
     </div>
@@ -525,8 +526,8 @@
         </div>
       </div>
       <div class="score-section total-score">
-        <div class="score-label">🏆 총 점수</div>
         <div class="medal-badge" id="green-total-medal">🥇 1등</div>
+        <div class="score-label">🏆 총 점수</div>
         <div class="score-value" id="green-total">0</div>
       </div>
     </div>
@@ -581,8 +582,8 @@
         </div>
       </div>
       <div class="score-section total-score">
-        <div class="score-label">🏆 총 점수</div>
         <div class="medal-badge" id="blue-total-medal">🥇 1등</div>
+        <div class="score-label">🏆 총 점수</div>
         <div class="score-value" id="blue-total">0</div>
       </div>
     </div>
@@ -637,8 +638,8 @@
         </div>
       </div>
       <div class="score-section total-score">
-        <div class="score-label">🏆 총 점수</div>
         <div class="medal-badge" id="yellow-total-medal">🥇 1등</div>
+        <div class="score-label">🏆 총 점수</div>
         <div class="score-value" id="yellow-total">0</div>
       </div>
     </div>
